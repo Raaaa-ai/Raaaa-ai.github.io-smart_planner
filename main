@@ -1,0 +1,1533 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能计划</title>
+  </head>
+  <body>
+    <div class="app-container">
+      <header class="header">
+        <h1 class="app-title">智能计划</h1>
+        <div class="header-actions">
+          <div class="theme-picker">
+            <span class="theme-label">主题:</span>
+            <div class="theme-options">
+              <button
+                class="theme-btn active"
+                data-theme="purple"
+                title="紫色主题"
+              ></button>
+              <button
+                class="theme-btn"
+                data-theme="blue"
+                title="蓝色主题"
+              ></button>
+              <button
+                class="theme-btn"
+                data-theme="green"
+                title="绿色主题"
+              ></button>
+              <button
+                class="theme-btn"
+                data-theme="orange"
+                title="橙色主题"
+              ></button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="all-tasks">所有事项</button>
+        <button class="tab-btn" data-tab="daily-view">每日分配</button>
+        <button class="tab-btn" data-tab="monthly-view">每月分配</button>
+      </nav>
+
+      <main class="main-content">
+        <div class="tab-content active" id="all-tasks">
+          <div class="task-form">
+            <input
+              class="task-input"
+              type="text"
+              placeholder="输入任务内容..."
+            />
+            <input class="task-date" type="date" />
+            <input class="task-time" type="time" />
+            <button class="add-btn">添加任务</button>
+          </div>
+
+          <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="pending">待完成</button>
+            <button class="filter-btn" data-filter="completed">已完成</button>
+          </div>
+
+          <div class="task-list"></div>
+        </div>
+
+        <div class="tab-content" id="daily-view">
+          <div class="calendar-header">
+            <button class="nav-date-btn" id="prev-day">◀</button>
+            <div class="current-date-display" id="current-date"></div>
+            <button class="nav-date-btn" id="next-day">▶</button>
+            <button class="nav-date-btn" id="today-btn">今天</button>
+          </div>
+
+          <div class="daily-stats">
+            <div class="stat-item">
+              <span class="stat-value" id="total-count">0</span>
+              <span class="stat-label">总任务</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="completed-count">0</span>
+              <span class="stat-label">已完成</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="progress-percent">0%</span>
+              <span class="stat-label">完成率</span>
+            </div>
+          </div>
+
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+
+          <div class="daily-task-list" id="daily-tasks"></div>
+        </div>
+
+        <div class="tab-content" id="monthly-view">
+          <div class="calendar-header">
+            <button class="nav-date-btn" id="prev-month">◀</button>
+            <div class="current-date-display" id="current-month"></div>
+            <button class="nav-date-btn" id="next-month">▶</button>
+            <button class="nav-date-btn" id="this-month-btn">本月</button>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item">
+              <span class="legend-color completed"></span>
+              <span>已完成</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color pending"></span>
+              <span>未完成</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color mixed"></span>
+              <span>部分完成</span>
+            </div>
+          </div>
+
+          <div class="calendar-grid" id="calendar-grid"></div>
+
+          <div class="monthly-summary">
+            <h3>本月统计</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-value" id="monthly-total">0</span>
+                <span class="summary-label">总任务</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="monthly-completed">0</span>
+                <span class="summary-label">已完成</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="monthly-pending">0</span>
+                <span class="summary-label">未完成</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value" id="monthly-rate">0%</span>
+                <span class="summary-label">完成率</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div class="notification-container" id="notification-container"></div>
+    </div>
+
+    <style>
+      :root {
+        --primary-color: rgb(113, 65, 168);
+        --secondary-color: rgba(44, 114, 251, 1);
+        --accent-color: rgb(113, 65, 168);
+        --bg-gradient: linear-gradient(
+          to right,
+          rgb(113, 65, 168),
+          rgba(44, 114, 251, 1)
+        );
+        --card-bg: white;
+        --text-color: #333;
+        --border-color: #ddd;
+        --hover-bg: #f5f5f5;
+      }
+
+      [data-theme='purple'] {
+        --primary-color: rgb(113, 65, 168);
+        --secondary-color: rgba(44, 114, 251, 1);
+        --accent-color: rgb(113, 65, 168);
+        --bg-gradient: linear-gradient(
+          to right,
+          rgb(113, 65, 168),
+          rgba(44, 114, 251, 1)
+        );
+      }
+
+      [data-theme='blue'] {
+        --primary-color: rgb(30, 144, 255);
+        --secondary-color: rgb(65, 105, 225);
+        --accent-color: rgb(30, 144, 255);
+        --bg-gradient: linear-gradient(
+          to right,
+          rgb(30, 144, 255),
+          rgb(65, 105, 225)
+        );
+      }
+
+      [data-theme='green'] {
+        --primary-color: rgb(46, 139, 87);
+        --secondary-color: rgb(34, 139, 34);
+        --accent-color: rgb(46, 139, 87);
+        --bg-gradient: linear-gradient(
+          to right,
+          rgb(46, 139, 87),
+          rgb(34, 139, 34)
+        );
+      }
+
+      [data-theme='orange'] {
+        --primary-color: rgb(255, 140, 0);
+        --secondary-color: rgb(255, 69, 0);
+        --accent-color: rgb(255, 140, 0);
+        --bg-gradient: linear-gradient(
+          to right,
+          rgb(255, 140, 0),
+          rgb(255, 69, 0)
+        );
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--bg-gradient);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        transition: background 0.3s ease;
+      }
+
+      .app-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+        margin-bottom: 20px;
+      }
+
+      .app-title {
+        font-size: 28px;
+        font-weight: bold;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .theme-picker {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .theme-label {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .theme-options {
+        display: flex;
+        gap: 8px;
+      }
+
+      .theme-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .theme-btn:hover {
+        transform: scale(1.2);
+        border-color: white;
+      }
+
+      .theme-btn.active {
+        transform: scale(1.2);
+        border-color: white;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+
+      .theme-btn[data-theme='purple'] {
+        background: linear-gradient(
+          to right,
+          rgb(113, 65, 168),
+          rgba(44, 114, 251, 1)
+        );
+      }
+      .theme-btn[data-theme='blue'] {
+        background: linear-gradient(
+          to right,
+          rgb(30, 144, 255),
+          rgb(65, 105, 225)
+        );
+      }
+      .theme-btn[data-theme='green'] {
+        background: linear-gradient(
+          to right,
+          rgb(46, 139, 87),
+          rgb(34, 139, 34)
+        );
+      }
+      .theme-btn[data-theme='orange'] {
+        background: linear-gradient(
+          to right,
+          rgb(255, 140, 0),
+          rgb(255, 69, 0)
+        );
+      }
+
+      .nav-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 5px;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+      }
+
+      .tab-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: white;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .tab-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .tab-btn.active {
+        background: white;
+        color: var(--primary-color);
+      }
+
+      .main-content {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+
+      .tab-content {
+        display: none;
+        padding: 25px;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .task-form {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+      }
+
+      .task-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 12px 15px;
+        border: 2px solid #eee;
+        border-radius: 10px;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.3s ease;
+      }
+
+      .task-input:focus {
+        border-color: var(--primary-color);
+      }
+
+      .task-date,
+      .task-time {
+        padding: 12px 10px;
+        border: 2px solid #eee;
+        border-radius: 10px;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.3s ease;
+        cursor: pointer;
+      }
+
+      .task-date:focus,
+      .task-time:focus {
+        border-color: var(--primary-color);
+      }
+
+      .add-btn {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 10px;
+        background: var(--bg-gradient);
+        color: white;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .add-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .filter-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .filter-btn {
+        padding: 8px 20px;
+        border: 2px solid #eee;
+        border-radius: 20px;
+        background: white;
+        color: #666;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .filter-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+      }
+
+      .filter-btn.active {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+      }
+
+      .task-list {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .task-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        margin-bottom: 12px;
+        background: #f9f9f9;
+        border-radius: 12px;
+        border-left: 4px solid var(--primary-color);
+        transition: all 0.3s ease;
+      }
+
+      .task-item:hover {
+        background: #f0f0f0;
+        transform: translateX(5px);
+      }
+
+      .task-item.completed {
+        background: #e8f5e9;
+        border-left-color: #4caf50;
+      }
+
+      .task-item.completed .task-text {
+        text-decoration: line-through;
+        color: #888;
+      }
+
+      .task-checkbox {
+        width: 22px;
+        height: 22px;
+        margin-right: 15px;
+        cursor: pointer;
+        accent-color: var(--primary-color);
+      }
+
+      .task-text {
+        flex: 1;
+        font-size: 16px;
+        color: #333;
+      }
+
+      .task-time-info {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        color: #888;
+        margin-right: 15px;
+      }
+
+      .task-time-info svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .task-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .action-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .action-btn.edit {
+        background: #ffc107;
+        color: #333;
+      }
+
+      .action-btn.edit:hover {
+        background: #ffb300;
+      }
+
+      .action-btn.delete {
+        background: #ff5252;
+        color: white;
+      }
+
+      .action-btn.delete:hover {
+        background: #ff1744;
+      }
+
+      .calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+
+      .nav-date-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: var(--bg-gradient);
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .nav-date-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      #today-btn {
+        font-size: 12px;
+        width: auto;
+        padding: 0 15px;
+      }
+
+      .current-date-display {
+        font-size: 22px;
+        font-weight: bold;
+        color: var(--primary-color);
+      }
+
+      .daily-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 12px;
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-value {
+        display: block;
+        font-size: 32px;
+        font-weight: bold;
+        color: var(--primary-color);
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #666;
+      }
+
+      .progress-bar {
+        height: 12px;
+        background: #eee;
+        border-radius: 6px;
+        margin-bottom: 25px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--bg-gradient);
+        border-radius: 6px;
+        transition: width 0.5s ease;
+      }
+
+      .daily-task-list {
+        max-height: 350px;
+        overflow-y: auto;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+        font-size: 16px;
+      }
+
+      .empty-state svg {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+      }
+
+      .notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+
+      .notification {
+        padding: 15px 20px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        color: white;
+        font-size: 14px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        animation: slideIn 0.3s ease;
+        max-width: 300px;
+      }
+
+      .notification.success {
+        background: linear-gradient(135deg, #66bb6a, #43a047);
+      }
+
+      .notification.warning {
+        background: linear-gradient(135deg, #ffa726, #ff7043);
+      }
+
+      .notification.error {
+        background: linear-gradient(135deg, #ef5350, #e53935);
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .legend {
+        display: flex;
+        justify-content: center;
+        gap: 25px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 12px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+      }
+
+      .legend-color.completed {
+        background: #4caf50;
+      }
+
+      .legend-color.pending {
+        background: #f44336;
+      }
+
+      .legend-color.mixed {
+        background: linear-gradient(135deg, #4caf50 50%, #f44336 50%);
+      }
+
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        margin-bottom: 25px;
+      }
+
+      .calendar-header-row {
+        display: contents;
+      }
+
+      .calendar-day-header {
+        text-align: center;
+        padding: 10px;
+        font-weight: 600;
+        color: #666;
+        font-size: 14px;
+        background: #f5f5f5;
+        border-radius: 8px;
+      }
+
+      .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        background: #f9f9f9;
+        border: 2px solid transparent;
+      }
+
+      .calendar-day:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .calendar-day.today {
+        border-color: var(--primary-color);
+        font-weight: bold;
+      }
+
+      .calendar-day.other-month {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      .calendar-day.completed-all {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .calendar-day.pending-some {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .calendar-day.mixed {
+        background: linear-gradient(135deg, #e8f5e9 50%, #ffebee 50%);
+      }
+
+      .calendar-day.no-task {
+        background: #f9f9f9;
+      }
+
+      .day-number {
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      .day-indicator {
+        position: absolute;
+        bottom: 4px;
+        display: flex;
+        gap: 2px;
+      }
+
+      .indicator-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+
+      .indicator-dot.completed {
+        background: #4caf50;
+      }
+
+      .indicator-dot.pending {
+        background: #f44336;
+      }
+
+      .monthly-summary {
+        background: #f9f9f9;
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .monthly-summary h3 {
+        margin-bottom: 15px;
+        color: var(--primary-color);
+        font-size: 18px;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+      }
+
+      .summary-item {
+        text-align: center;
+        padding: 12px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .summary-value {
+        display: block;
+        font-size: 24px;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 5px;
+      }
+
+      .summary-label {
+        font-size: 12px;
+        color: #888;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        display: none;
+      }
+
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      .modal {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal h3 {
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .modal input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border: 2px solid #eee;
+        border-radius: 10px;
+        font-size: 15px;
+        outline: none;
+      }
+
+      .modal input:focus {
+        border-color: var(--primary-color);
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .modal-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .modal-btn.cancel {
+        background: #eee;
+        color: #666;
+      }
+
+      .modal-btn.save {
+        background: var(--bg-gradient);
+        color: white;
+      }
+
+      @media (max-width: 600px) {
+        .task-form {
+          flex-direction: column;
+        }
+
+        .task-input,
+        .task-date,
+        .task-time {
+          width: 100%;
+        }
+
+        .daily-stats {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .header {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .legend {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .summary-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .calendar-day {
+          padding: 4px;
+        }
+
+        .day-number {
+          font-size: 14px;
+        }
+      }
+    </style>
+
+    <div class="modal-overlay" id="edit-modal">
+      <div class="modal">
+        <h3>编辑任务</h3>
+        <input type="text" id="edit-text" placeholder="任务内容" />
+        <input type="date" id="edit-date" />
+        <input type="time" id="edit-time" />
+        <div class="modal-actions">
+          <button class="modal-btn cancel" id="cancel-edit">取消</button>
+          <button class="modal-btn save" id="save-edit">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const STORAGE_KEY_TASKS = 'smart_planner_tasks';
+      const STORAGE_KEY_THEME = 'smart_planner_theme';
+
+      let tasks = [];
+      let currentFilter = 'all';
+      let currentDate = new Date();
+      let monthlyDate = new Date();
+      let editingTaskId = null;
+
+      function init() {
+        loadTasks();
+        loadTheme();
+        setupEventListeners();
+        renderAllTasks();
+        renderDailyView();
+        renderMonthlyView();
+        checkNotifications();
+        setInterval(checkNotifications, 60000);
+      }
+
+      function loadTasks() {
+        const stored = localStorage.getItem(STORAGE_KEY_TASKS);
+        if (stored) {
+          tasks = JSON.parse(stored);
+        } else {
+          tasks = [
+            { id: 1, text: '学习高数', completed: false, date: '', time: '' },
+            { id: 2, text: '吃饭', completed: false, date: '', time: '' },
+            { id: 3, text: '出行', completed: false, date: '', time: '' },
+          ];
+          saveTasks();
+        }
+      }
+
+      function saveTasks() {
+        localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(tasks));
+      }
+
+      function loadTheme() {
+        const theme = localStorage.getItem(STORAGE_KEY_THEME) || 'purple';
+        document.documentElement.setAttribute('data-theme', theme);
+        document
+          .querySelector(`.theme-btn[data-theme="${theme}"]`)
+          .classList.add('active');
+      }
+
+      function saveTheme(theme) {
+        localStorage.setItem(STORAGE_KEY_THEME, theme);
+        document.documentElement.setAttribute('data-theme', theme);
+        document
+          .querySelectorAll('.theme-btn')
+          .forEach((btn) => btn.classList.remove('active'));
+        document
+          .querySelector(`.theme-btn[data-theme="${theme}"]`)
+          .classList.add('active');
+      }
+
+      function setupEventListeners() {
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+          btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        document.querySelectorAll('.theme-btn').forEach((btn) => {
+          btn.addEventListener('click', () => saveTheme(btn.dataset.theme));
+        });
+
+        document.querySelectorAll('.filter-btn').forEach((btn) => {
+          btn.addEventListener('click', () => setFilter(btn.dataset.filter));
+        });
+
+        document.querySelector('.add-btn').addEventListener('click', addTask);
+        document
+          .querySelector('.task-input')
+          .addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+          });
+
+        document
+          .getElementById('prev-day')
+          .addEventListener('click', () => changeDate(-1));
+        document
+          .getElementById('next-day')
+          .addEventListener('click', () => changeDate(1));
+        document.getElementById('today-btn').addEventListener('click', () => {
+          currentDate = new Date();
+          renderDailyView();
+        });
+
+        document
+          .getElementById('prev-month')
+          .addEventListener('click', () => changeMonth(-1));
+        document
+          .getElementById('next-month')
+          .addEventListener('click', () => changeMonth(1));
+        document
+          .getElementById('this-month-btn')
+          .addEventListener('click', () => {
+            monthlyDate = new Date();
+            renderMonthlyView();
+          });
+
+        document
+          .getElementById('cancel-edit')
+          .addEventListener('click', closeEditModal);
+        document
+          .getElementById('save-edit')
+          .addEventListener('click', saveEdit);
+        document.getElementById('edit-modal').addEventListener('click', (e) => {
+          if (e.target === document.getElementById('edit-modal'))
+            closeEditModal();
+        });
+      }
+
+      function switchTab(tabId) {
+        document
+          .querySelectorAll('.tab-btn')
+          .forEach((btn) => btn.classList.remove('active'));
+        document
+          .querySelector(`.tab-btn[data-tab="${tabId}"]`)
+          .classList.add('active');
+
+        document
+          .querySelectorAll('.tab-content')
+          .forEach((content) => content.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+
+        if (tabId === 'daily-view') {
+          renderDailyView();
+        } else if (tabId === 'monthly-view') {
+          renderMonthlyView();
+        }
+      }
+
+      function setFilter(filter) {
+        currentFilter = filter;
+        document
+          .querySelectorAll('.filter-btn')
+          .forEach((btn) => btn.classList.remove('active'));
+        document
+          .querySelector(`.filter-btn[data-filter="${filter}"]`)
+          .classList.add('active');
+        renderAllTasks();
+      }
+
+      function addTask() {
+        const input = document.querySelector('.task-input');
+        const dateInput = document.querySelector('.task-date');
+        const timeInput = document.querySelector('.task-time');
+
+        const text = input.value.trim();
+        if (!text) {
+          showNotification('请输入任务内容', 'error');
+          return;
+        }
+
+        const newTask = {
+          id: Date.now(),
+          text: text,
+          completed: false,
+          date: dateInput.value,
+          time: timeInput.value,
+          createdAt: new Date().toISOString(),
+        };
+
+        tasks.push(newTask);
+        saveTasks();
+
+        input.value = '';
+        dateInput.value = '';
+        timeInput.value = '';
+
+        renderAllTasks();
+        renderDailyView();
+        renderMonthlyView();
+
+        showNotification('任务添加成功', 'success');
+      }
+
+      function isTaskForToday(task) {
+        if (!task.date) return false;
+        const todayStr = currentDate.toISOString().split('T')[0];
+        return task.date === todayStr;
+      }
+
+      function toggleComplete(id) {
+        const task = tasks.find((t) => t.id === id);
+        if (task) {
+          task.completed = !task.completed;
+          saveTasks();
+          renderAllTasks();
+          renderDailyView();
+          renderMonthlyView();
+
+          const msg = task.completed ? '任务已完成' : '任务已取消完成';
+          showNotification(msg, 'success');
+        }
+      }
+
+      function deleteTask(id) {
+        if (!confirm('确定要删除这个任务吗？')) return;
+
+        const task = tasks.find((t) => t.id === id);
+        tasks = tasks.filter((t) => t.id !== id);
+        saveTasks();
+        renderAllTasks();
+        renderDailyView();
+        renderMonthlyView();
+
+        showNotification('任务已删除', 'warning');
+      }
+
+      function editTask(id) {
+        const task = tasks.find((t) => t.id === id);
+        if (task) {
+          editingTaskId = id;
+          document.getElementById('edit-text').value = task.text;
+          document.getElementById('edit-date').value = task.date || '';
+          document.getElementById('edit-time').value = task.time || '';
+          document.getElementById('edit-modal').classList.add('active');
+        }
+      }
+
+      function closeEditModal() {
+        document.getElementById('edit-modal').classList.remove('active');
+        editingTaskId = null;
+      }
+
+      function saveEdit() {
+        if (editingTaskId === null) return;
+
+        const task = tasks.find((t) => t.id === editingTaskId);
+        if (task) {
+          const text = document.getElementById('edit-text').value.trim();
+          if (!text) {
+            showNotification('请输入任务内容', 'error');
+            return;
+          }
+
+          task.text = text;
+          task.date = document.getElementById('edit-date').value;
+          task.time = document.getElementById('edit-time').value;
+
+          saveTasks();
+          renderAllTasks();
+          renderDailyView();
+          renderMonthlyView();
+          closeEditModal();
+
+          showNotification('任务已更新', 'success');
+        }
+      }
+
+      function renderAllTasks() {
+        const list = document.querySelector('.task-list');
+        let filteredTasks = tasks;
+
+        if (currentFilter === 'pending') {
+          filteredTasks = tasks.filter((t) => !t.completed);
+        } else if (currentFilter === 'completed') {
+          filteredTasks = tasks.filter((t) => t.completed);
+        }
+
+        if (filteredTasks.length === 0) {
+          list.innerHTML = `
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+              暂无任务
+            </div>
+          `;
+          return;
+        }
+
+        list.innerHTML = filteredTasks
+          .map(
+            (task) => `
+          <div class="task-item ${task.completed ? 'completed' : ''}">
+            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
+                   onchange="toggleComplete(${task.id})">
+            <span class="task-text">${escapeHtml(task.text)}</span>
+            ${
+              task.date || task.time
+                ? `
+              <div class="task-time-info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  ${task.date ? '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>' : ''}
+                  ${task.time ? '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' : ''}
+                </svg>
+                <span>${formatDateTime(task.date, task.time)}</span>
+              </div>
+            `
+                : ''
+            }
+            <div class="task-actions">
+              <button class="action-btn edit" onclick="editTask(${task.id})">编辑</button>
+              <button class="action-btn delete" onclick="deleteTask(${task.id})">删除</button>
+            </div>
+          </div>
+        `,
+          )
+          .join('');
+      }
+
+      function renderDailyView() {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateDisplay = document.getElementById('current-date');
+        dateDisplay.textContent = formatDateDisplay(currentDate);
+
+        const dailyTasks = tasks.filter((t) => t.date === dateStr);
+        const completedCount = dailyTasks.filter((t) => t.completed).length;
+        const totalCount = dailyTasks.length;
+        const percent =
+          totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+        document.getElementById('total-count').textContent = totalCount;
+        document.getElementById('completed-count').textContent = completedCount;
+        document.getElementById('progress-percent').textContent = `${percent}%`;
+        document.getElementById('progress-fill').style.width = `${percent}%`;
+
+        const list = document.getElementById('daily-tasks');
+
+        if (dailyTasks.length === 0) {
+          list.innerHTML = `
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              ${dateStr === new Date().toISOString().split('T')[0] ? '今天暂无任务，快去添加吧！' : '该日期暂无任务'}
+            </div>
+          `;
+          return;
+        }
+
+        dailyTasks.sort((a, b) => {
+          if (a.completed !== b.completed) return a.completed ? 1 : -1;
+          if (!a.time && !b.time) return 0;
+          if (!a.time) return 1;
+          if (!b.time) return -1;
+          return a.time.localeCompare(b.time);
+        });
+
+        list.innerHTML = dailyTasks
+          .map(
+            (task) => `
+          <div class="task-item ${task.completed ? 'completed' : ''}">
+            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
+                   onchange="toggleComplete(${task.id})">
+            <span class="task-text">${escapeHtml(task.text)}</span>
+            ${
+              task.time
+                ? `
+              <div class="task-time-info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>${task.time}</span>
+              </div>
+            `
+                : ''
+            }
+            <div class="task-actions">
+              <button class="action-btn edit" onclick="editTask(${task.id})">编辑</button>
+              <button class="action-btn delete" onclick="deleteTask(${task.id})">删除</button>
+            </div>
+          </div>
+        `,
+          )
+          .join('');
+      }
+
+      function changeDate(days) {
+        currentDate.setDate(currentDate.getDate() + days);
+        renderDailyView();
+      }
+
+      function changeMonth(months) {
+        monthlyDate.setMonth(monthlyDate.getMonth() + months);
+        renderMonthlyView();
+      }
+
+      function renderMonthlyView() {
+        const year = monthlyDate.getFullYear();
+        const month = monthlyDate.getMonth();
+
+        document.getElementById('current-month').textContent =
+          `${year}年${month + 1}月`;
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDay = firstDay.getDay();
+        const totalDays = lastDay.getDate();
+
+        const calendarGrid = document.getElementById('calendar-grid');
+        const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+        let html = weekDays
+          .map((day) => `<div class="calendar-day-header">${day}</div>`)
+          .join('');
+
+        for (let i = 0; i < startDay; i++) {
+          html += `<div class="calendar-day other-month"></div>`;
+        }
+
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+
+        for (let day = 1; day <= totalDays; day++) {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dayTasks = tasks.filter((t) => t.date === dateStr);
+
+          let statusClass = 'no-task';
+          let dotsHtml = '';
+
+          if (dayTasks.length > 0) {
+            const completedCount = dayTasks.filter((t) => t.completed).length;
+            const pendingCount = dayTasks.length - completedCount;
+
+            if (pendingCount === 0) {
+              statusClass = 'completed-all';
+            } else if (completedCount === 0) {
+              statusClass = 'pending-some';
+            } else {
+              statusClass = 'mixed';
+            }
+
+            dotsHtml = `<div class="day-indicator">
+              ${completedCount > 0 ? '<span class="indicator-dot completed"></span>' : ''}
+              ${pendingCount > 0 ? '<span class="indicator-dot pending"></span>' : ''}
+            </div>`;
+          }
+
+          const isToday = dateStr === todayStr;
+          const todayClass = isToday ? 'today' : '';
+
+          html += `
+            <div class="calendar-day ${statusClass} ${todayClass}" onclick="selectDateFromCalendar('${dateStr}')">
+              <span class="day-number">${day}</span>
+              ${dotsHtml}
+            </div>
+          `;
+        }
+
+        const remainingCells = 42 - (startDay + totalDays);
+        for (let i = 0; i < remainingCells; i++) {
+          html += `<div class="calendar-day other-month"></div>`;
+        }
+
+        calendarGrid.innerHTML = html;
+
+        const monthTasks = tasks.filter((t) => {
+          if (!t.date) return false;
+          const taskDate = new Date(t.date);
+          return (
+            taskDate.getFullYear() === year && taskDate.getMonth() === month
+          );
+        });
+
+        const monthlyCompleted = monthTasks.filter((t) => t.completed).length;
+        const monthlyTotal = monthTasks.length;
+        const monthlyPending = monthlyTotal - monthlyCompleted;
+        const monthlyRate =
+          monthlyTotal > 0
+            ? Math.round((monthlyCompleted / monthlyTotal) * 100)
+            : 0;
+
+        document.getElementById('monthly-total').textContent = monthlyTotal;
+        document.getElementById('monthly-completed').textContent =
+          monthlyCompleted;
+        document.getElementById('monthly-pending').textContent = monthlyPending;
+        document.getElementById('monthly-rate').textContent = `${monthlyRate}%`;
+      }
+
+      function selectDateFromCalendar(dateStr) {
+        currentDate = new Date(dateStr);
+        switchTab('daily-view');
+      }
+
+      function formatDateDisplay(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const weekDays = [
+          '周日',
+          '周一',
+          '周二',
+          '周三',
+          '周四',
+          '周五',
+          '周六',
+        ];
+        const weekDay = weekDays[date.getDay()];
+
+        const today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+          return `今天 · ${year}年${month}月${day}日 ${weekDay}`;
+        }
+
+        return `${year}年${month}月${day}日 ${weekDay}`;
+      }
+
+      function formatDateTime(date, time) {
+        const parts = [];
+        if (date) {
+          const d = new Date(date);
+          parts.push(`${d.getMonth() + 1}/${d.getDate()}`);
+        }
+        if (time) {
+          parts.push(time);
+        }
+        return parts.join(' ');
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function showNotification(message, type = 'success') {
+        const container = document.getElementById('notification-container');
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+
+        container.appendChild(notification);
+
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+      }
+
+      function checkNotifications() {
+        const now = new Date();
+        const nowStr = now.toISOString().split('T')[0];
+        const nowTime = now.toTimeString().slice(0, 5);
+
+        tasks.forEach((task) => {
+          if (
+            !task.completed &&
+            task.date === nowStr &&
+            task.time === nowTime
+          ) {
+            if (!task.notified) {
+              if (Notification.permission === 'granted') {
+                new Notification('智能计划', {
+                  body: `任务提醒：${task.text}`,
+                  icon: '📋',
+                });
+              }
+              task.notified = true;
+              saveTasks();
+              showNotification(`任务提醒：${task.text}`, 'warning');
+            }
+          }
+        });
+      }
+
+      if (
+        Notification.permission !== 'granted' &&
+        Notification.permission !== 'denied'
+      ) {
+        Notification.requestPermission();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
